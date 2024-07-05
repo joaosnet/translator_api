@@ -1,34 +1,42 @@
-# import ollama
+from http import HTTPStatus
+
+import ollama
 from fastapi import FastAPI
+
+from translator.schemas import Message, TranslateSchema
 
 app = FastAPI()
 
 
-@app.get('/')
+@app.get('/', response_model=Message, status_code=HTTPStatus.OK.value)
 def read_root() -> dict:
     return {'message': 'Olá Mundo'}
 
 
-# @app.post('/llm3/{conteudo}')
-# def llm3(conteudo: dict) -> str:
-#     # Extract the values from the JSON
-#     idioma = conteudo.get('idioma', '')
-#     comentario = conteudo.get('comentario', '')
+@app.post('/llm3/', response_model=Message, status_code=HTTPStatus.OK.value)
+def llm3(conteudo: TranslateSchema) -> Message:
+    idioma = conteudo.idioma
+    comentario = conteudo.comentario
 
-#     prompt = f"""Atue como tradutor + corretor com 20 anos de experiência.
-#     Seu trabalho é fazer a tradução do idioma {idioma}.
-#   Não quero outra coisa, apenas a tradução (e se necessário a correção do tex
-#    to). Para a próxima tarefa, faça a tradução (e se necessário a correção do
-#     texto) do seguinte texto: {comentario}"""
+    prompt = f"""Atue como tradutor + corretor com 20 anos de experiência.
+    Seu trabalho é fazer a tradução do idioma "{idioma}".
+    Não quero outra coisa, apenas a tradução (e se necessário a correção do tex
+    to). Para a próxima tarefa, faça a tradução (e se necessário a correção do
+    texto) do seguinte texto: "{comentario}"
+    quero um message simples, direta e clara, sem erros de tradução ou gramati
+    cais, OU SEJA APENAS RESPONDA COM A TRADUÇÃO DO TEXTO
+    Exemplo de Idioma: en (Não responder com o idioma, apenas com a tradução)
+    Exemplo de Texto enviado: Olá Mundo
+    Exemplo de SUA RESPOSTA: Hello World"""
 
-#     response = ollama.chat(
-#         model='llama3',
-#         messages=[
-#             {
-#                 'role': 'user',
-#                 'content': prompt,
-#             }
-#         ],
-#     )
+    response = ollama.chat(
+        model='llama3',
+        messages=[
+            {
+                'role': 'user',
+                'content': prompt,
+            }
+        ],
+    )
 
-#     return response['message']['content']
+    return Message(message=response['message']['content'])
