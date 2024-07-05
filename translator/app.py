@@ -25,7 +25,7 @@ def llm3(conteudo: TranslateSchema) -> Message:
     texto) do seguinte texto: "{comentario}"
     quero um message simples, direta e clara, sem erros de tradução ou gramati
     cais, OU SEJA APENAS RESPONDA COM A TRADUÇÃO DO TEXTO
-    Exemplo de Idioma: en (Não responder com o idioma, apenas com a tradução)
+    Exemplo de Idioma: en
     Exemplo de Texto enviado: Olá Mundo
     Exemplo de SUA RESPOSTA: Hello World"""
 
