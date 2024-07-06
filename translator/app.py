@@ -13,7 +13,7 @@ def read_root() -> dict:
     return {'message': 'Olá Mundo'}
 
 
-@app.post('/llm3/', response_model=Message, status_code=HTTPStatus.OK.value)
+@app.post('/translator/', response_model=Message, status_code=HTTPStatus.OK.value)  # noqa: E501
 def llm3(conteudo: TranslateSchema) -> Message:
     idioma = conteudo.idioma
     comentario = conteudo.comentario
