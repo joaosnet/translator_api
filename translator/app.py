@@ -17,7 +17,16 @@ def read_root() -> dict:
 def llm3(conteudo: TranslateSchema) -> Message:
     idioma = conteudo.idioma
     comentario = conteudo.comentario
-
+    # switch case para definir o idioma
+    match idioma:
+        case 'en_US':
+            idioma = 'inglês'
+        case 'de':
+            idioma = 'Alemão'
+        case 'pt':
+            idioma = 'Português'
+        case _:
+            idioma = 'idioma desconhecido'
     prompt = f"""Atue como tradutor + corretor com 20 anos de experiência.
     Seu trabalho é fazer a tradução do idioma "{idioma}".
     Não quero outra coisa, apenas a tradução (e se necessário a correção do tex
