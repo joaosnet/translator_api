@@ -13,3 +13,7 @@ class UserMessage(BaseModel):
 class TranslateSchema(BaseModel):
     idioma: str
     comentario: str
+
+
+class TranslatefordbSchema(BaseModel):
+    comentario: str
