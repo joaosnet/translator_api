@@ -1,94 +1,129 @@
-from http import HTTPStatus
-from pprint import pprint as pp
-
 import google.generativeai as genai
-from fastapi import FastAPI
-from ollama import AsyncClient
+import motor
+from fastapi import Body, FastAPI, status
 
-from translator.schemas import Message, TranslatefordbSchema, TranslateSchema
+from translator.schemas import (
+    Comentario,
+    ComentarioCollection,
+    Message,
+)
 
 app = FastAPI()
 
 genai.configure(api_key='AIzaSyCkBIo7h-UrTNlo7V3qzEAeu4o0JcAqKuA')
 
-
-@app.get('/', response_model=Message, status_code=HTTPStatus.OK.value)
-def read_root() -> dict:
-    return {'message': 'Olá Mundo'}
-
-
-@app.post(
-    '/translator/', response_model=Message, status_code=HTTPStatus.OK.value
-)  # noqa: E501
-async def llm3(conteudo: TranslateSchema) -> Message:
-    idioma = conteudo.idioma
-    comentario = conteudo.comentario
-    # switch case para definir o idioma
-    match idioma:
-        case 'en_US':
-            idioma = 'inglês'
-        case 'de':
-            idioma = 'Alemão'
-        case 'pt':
-            idioma = 'Português do Brasil'
-        case _:
-            idioma = 'idioma desconhecido'
-    prompt = f"""Atue como tradutor + corretor com 20 anos de experiência.
-    Seu trabalho é fazer a tradução para o idioma + correção  "{idioma}", caso
-    já esteja no idioma selecionado faça a correção do texto.
-    Não quero outra coisa, apenas a tradução (e se necessário a correção do tex
-    to). Para a próxima tarefa, faça a tradução (e se necessário a correção do
-    texto) do seguinte texto: "{comentario}"
-    quero um message simples, direta e clara, sem erros de tradução ou gramati
-    cais, OU SEJA APENAS RESPONDA COM A TRADUÇÃO DO TEXTO
-    Exemplo de Idioma: en
-    Exemplo de Texto enviado: Olá Mundo
-    Exemplo de SUA RESPOSTA: Hello World"""
-
-    response = await AsyncClient().chat(
-        model='llama3',
-        messages=[
-            {
-                'role': 'user',
-                'content': prompt,
-            }
-        ],
-    )
-
-    return Message(message=response['message']['content'])
+URL = 'MONGODB_URL="mongodb+srv://<username>:<password>@<url>/<db>?retryWrites=true&w=majority"'
+client = motor.motor_asyncio.AsyncIOMotorClient(URL)
+db = client.get_database('comentarios_projeto')
+coments_collection = db.get_collection('comentarios')
 
 
-# criando uma rota para para usar a api do gemini para traduzir os comentarios
-# do usuario para os tres idiomas e quardar em um banco de dados
 @app.post(
     '/translator/gemini/',
+    response_description='Add new translated comment',
     response_model=Message,
-    status_code=HTTPStatus.OK.value,
-)  # noqa: E501
-def gemini(conteudo: TranslatefordbSchema):
+    status_code=status.HTTP_201_CREATED,
+    response_model_by_alias=False,
+)
+async def gemini(conteudo: Comentario = Body(...)):
+    """
+    Translate the user's comment into three languages
+    and store it in the database.
+    """
     model = genai.GenerativeModel('gemini-1.5-flash')
 
     comentario = conteudo.comentario
-    # switch case para definir o idioma
     idiomas = ['inglês', 'Alemão', 'Português do Brasil']
+    traducoes = {}
 
-    for i, idioma in enumerate(idiomas):
+    for idioma in idiomas:
         prompt = f"""Atue como tradutor + corretor com 20 anos de experiência.
         Seu trabalho é fazer a tradução para o idioma + correção  "{idioma}",
         caso já esteja no idioma selecionado faça a correção do texto.
         Não quero outra coisa, apenas a tradução (e se necessário a correção do
         texto). Para a próxima tarefa, faça a tradução (e se necessário a
         correção do texto) do seguinte texto: "{comentario}" quero um message
-        simples, direta e clara, sem erros de tradução ou gramati
-        cais, OU SEJA APENAS RESPONDA COM A TRADUÇÃO DO TEXTO
+        simples, direta e clara, sem erros de tradução ou gramaticais, OU SEJA APENAS RESPONDA COM A TRADUÇÃO DO TEXTO
         Exemplo de Idioma: en
         Exemplo de Texto enviado: Olá Mundo
-        Exemplo de SUA RESPOSTA: Hello World"""
+        Exemplo de SUA RESPOSTA: Hello World"""  # noqa: E501
 
         response = model.generate_content(prompt)
-        response = response.text
-        pp(response)
+        traducoes[idioma] = response.text
 
-        # salvar no banco de dados
+    # Criar o documento para inserir no MongoDB
+    comentario_documento = {
+        'usuario': conteudo.usuario,
+        'data': conteudo.data,
+        'comentarios': traducoes,
+    }
 
-    return Message(message=response)
+    # Inserir o documento no MongoDB
+    new_comment = await coments_collection.insert_one(comentario_documento)
+    await coments_collection.find_one({
+        '_id': new_comment.inserted_id
+    })
+
+    return Message(message='Comentário traduzido e salvo com sucesso.')
+
+
+@app.get(
+    '/translator/comments/',
+    response_description='List all comments',
+    response_model=ComentarioCollection,
+    response_model_by_alias=False,
+)
+async def list_comments():
+    """
+    List all of the comments in the database.
+
+    The response is unpaginated and limited to 1000 results.
+    """
+    comentarios = await coments_collection.find().to_list(1000)
+    return ComentarioCollection(comentarios=comentarios)
+
+
+# @app.get('/', response_model=Message, status_code=HTTPStatus.OK.value)
+# def read_root() -> dict:
+#     return {'message': 'Olá Mundo'}
+
+
+# @app.post(
+#     '/translator/', response_model=Message, status_code=HTTPStatus.OK.value
+# )  # noqa: E501
+# async def llm3(conteudo: TranslateSchema) -> Message:
+#     idioma = conteudo.idioma
+#     comentario = conteudo.comentario
+#     # switch case para definir o idioma
+#     match idioma:
+#         case 'en_US':
+#             idioma = 'inglês'
+#         case 'de':
+#             idioma = 'Alemão'
+#         case 'pt':
+#             idioma = 'Português do Brasil'
+#         case _:
+#             idioma = 'idioma desconhecido'
+#     prompt = f"""Atue como tradutor + corretor com 20 anos de experiência.
+#    Seu trabalho é fazer a tradução para o idioma + correção  "{idioma}", caso
+#     já esteja no idioma selecionado faça a correção do texto.
+#   Não quero outra coisa, apenas a tradução (e se necessário a correção do tex
+#    to). Para a próxima tarefa, faça a tradução (e se necessário a correção do
+#     texto) do seguinte texto: "{comentario}"
+#    quero um message simples, direta e clara, sem erros de tradução ou gramati
+#     cais, OU SEJA APENAS RESPONDA COM A TRADUÇÃO DO TEXTO
+#     Exemplo de Idioma: en
+#     Exemplo de Texto enviado: Olá Mundo
+#     Exemplo de SUA RESPOSTA: Hello World"""
+
+#     response = await AsyncClient().chat(
+#         model='llama3',
+#         messages=[
+#             {
+#                 'role': 'user',
+#                 'content': prompt,
+#             }
+#         ],
+#     )
+
+#     return Message(message=response['message']['content'])
