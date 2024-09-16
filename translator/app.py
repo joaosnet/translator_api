@@ -1,5 +1,5 @@
 import google.generativeai as genai
-import motor
+import motor.motor_asyncio
 from fastapi import Body, FastAPI, status
 
 from translator.schemas import (
@@ -12,7 +12,7 @@ app = FastAPI()
 
 genai.configure(api_key='AIzaSyCkBIo7h-UrTNlo7V3qzEAeu4o0JcAqKuA')
 
-URL = 'MONGODB_URL="mongodb+srv://<username>:<password>@<url>/<db>?retryWrites=true&w=majority"'
+URL = 'mongodb://adminUser:senhaSegura@127.0.0.1:27017/comentarios_projeto?retryWrites=true&w=majority'
 client = motor.motor_asyncio.AsyncIOMotorClient(URL)
 db = client.get_database('comentarios_projeto')
 coments_collection = db.get_collection('comentarios')
