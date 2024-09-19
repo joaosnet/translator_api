@@ -25,7 +25,7 @@ coments_collection = db.get_collection('comentarios')
     status_code=status.HTTP_201_CREATED,
     response_model_by_alias=False,
 )
-async def gemini(conteudo: Comentario = Body(...)):
+async def gemini(conteudo: Comentario):
     """
     Translate the user's comment into three languages
     and store it in the database.
@@ -63,8 +63,22 @@ async def gemini(conteudo: Comentario = Body(...)):
     await coments_collection.find_one({
         '_id': new_comment.inserted_id
     })
+    
+    match conteudo.idioma_requisitado:
+        case 'en_US':
+            idioma = 'inglês'
+            comentario_traduzido = traducoes[idioma]
+        case 'de':
+            idioma = 'Alemão'
+            comentario_traduzido = traducoes[idioma]
+        case 'pt':
+            idioma = 'Português do Brasil'
+            comentario_traduzido = traducoes[idioma]
+        case _:
+            idioma = 'idioma desconhecido'
+            comentario_traduzido = traducoes[idioma]
 
-    return Message(message='Comentário traduzido e salvo com sucesso.')
+    return Message(message=comentario_traduzido)
 
 
 @app.get(
