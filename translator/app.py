@@ -64,7 +64,21 @@ async def gemini(conteudo: Comentario = Body(...)):
         '_id': new_comment.inserted_id
     })
 
-    return Message(message='Comentário traduzido e salvo com sucesso.')
+    match conteudo.idioma_requisitado:
+        case 'en_US':
+            idioma = 'inglês'
+            comentario_traduzido = traducoes[idioma]
+        case 'de':
+            idioma = 'Alemão'
+            comentario_traduzido = traducoes[idioma]
+        case 'pt':
+            idioma = 'Português do Brasil'
+            comentario_traduzido = traducoes[idioma]
+        case _:
+            idioma = 'idioma desconhecido'
+            comentario_traduzido = traducoes[idioma]
+
+    return Message(message=comentario_traduzido)
 
 
 @app.get(
