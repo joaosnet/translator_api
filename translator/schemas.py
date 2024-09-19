@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from bson import ObjectId
 from pydantic import BaseModel, Field
@@ -55,3 +55,13 @@ class Comentario(BaseModel):
 
 class ComentarioCollection(BaseModel):
     comentarios: List[Comentario]
+
+
+def mongo_to_comentario(doc: dict) -> Comentario:
+    return Comentario(
+        comentario_id=str(doc['_id']),
+        usuario=doc['usuario'],
+        data=doc['data'],
+        comentario=doc['comentario'],
+        idioma_requisitado=doc['idioma_requisitado']
+    )
