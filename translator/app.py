@@ -98,11 +98,15 @@ async def list_comments():
 
 
 def mongo_to_comentario(doc: dict) -> Comentario:
+    idioma_requisitado = list(doc['comentarios'].keys())[0]
+    comentario = doc['comentarios'][idioma_requisitado]
+
     return Comentario(
         comentario_id=str(doc['_id']),
         usuario=doc['usuario'],
         data=doc['data'],
-        comentario=doc['comentarios'],
+        comentario=comentario,
+        idioma_requisitado=idioma_requisitado,
     )
 
 
