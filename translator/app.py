@@ -92,6 +92,7 @@ async def list_comments():
     The response is unpaginated and limited to 1000 results.
     """
     comentarios_docs = await coments_collection.find().to_list(1000)
+    print(comentarios_docs)
     comentarios = [mongo_to_comentario(doc) for doc in comentarios_docs]
     return ComentarioCollection(comentarios=comentarios)
 
@@ -101,8 +102,7 @@ def mongo_to_comentario(doc: dict) -> Comentario:
         comentario_id=str(doc['_id']),
         usuario=doc['usuario'],
         data=doc['data'],
-        comentario=doc['comentario'],
-        idioma_requisitado=doc['idioma_requisitado'],
+        comentario=doc['comentarios'],
     )
 
 
