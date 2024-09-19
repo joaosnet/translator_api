@@ -12,7 +12,7 @@ app = FastAPI()
 
 genai.configure(api_key='AIzaSyCkBIo7h-UrTNlo7V3qzEAeu4o0JcAqKuA')
 
-URL = 'mongodb://adminUser:senhaSegura@127.0.0.1:27017/comentarios_projeto?retryWrites=true&w=majority'
+URL = 'mongodb://admin:123@127.0.0.1:27017/comentarios_projeto?retryWrites=true&w=majority'
 client = motor.motor_asyncio.AsyncIOMotorClient(URL)
 db = client.get_database('comentarios_projeto')
 coments_collection = db.get_collection('comentarios')
