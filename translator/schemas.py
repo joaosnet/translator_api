@@ -36,21 +36,19 @@ class Comentario(BaseModel):
     comentario_id: PyObjectId = Field(default_factory=PyObjectId, alias='_id')
     usuario: str
     data: datetime = Field(default_factory=datetime.utcnow)
-    comentarios: Dict[str, str]
+    comentario: str
+    idioma_requisitado: str
 
     class Config:
         arbitrary_types_allowed = True
         json_encoders = {ObjectId: str}
-        schema_extra = {
+        json_schema_extra = {
             'example': {
                 'comentario_id': '507f1f77bcf86cd799439011',
                 'usuario': 'nome_usuario',
                 'data': '2023-10-01T00:00:00Z',
-                'comentarios': {
-                    'pt': 'Comentário em português',
-                    'en': 'Comment in English',
-                    'de': 'Kommentar auf Deutsch',
-                },
+                'comentario': 'ola',
+                'idioma_requisitado': 'en',
             }
         }
 
