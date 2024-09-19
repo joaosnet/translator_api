@@ -75,7 +75,7 @@ async def gemini(conteudo: Comentario = Body(...)):
             idioma = 'Português do Brasil'
             comentario_traduzido = traducoes[idioma]
         case _:
-            idioma = 'idioma desconhecido'
+            idioma = 'inglês'
             comentario_traduzido = traducoes[idioma]
 
     return Message(message=comentario_traduzido)
