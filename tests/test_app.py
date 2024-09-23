@@ -13,7 +13,7 @@ def test_translate(client):
 
     assert response.status_code == HTTPStatus.OK  # Assert (verificação)
 
-    assert response.json() == {'message': 'Hello World'}  # Assert(verificação)
+    assert response.json() == {'message': 'Hello World \n'}
 
 
 # def test_read_root_deve_retornar_ok_e_ola_mundo(client):
