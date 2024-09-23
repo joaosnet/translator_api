@@ -23,7 +23,7 @@ coments_collection = db.get_collection('comentarios')
 @app.post(
     '/translator/',
     response_description='Add new translated comment',
-    response_model=Comentario,
+    response_model=Message,
     status_code=HTTPStatus.OK.value,
     response_model_by_alias=False,
 )
