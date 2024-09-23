@@ -38,9 +38,16 @@ async def gemini(conteudo: Comentario = Body(...)):
         'comentario_original': comentario
     })
     if comentario_existe:
-        comentario_traduzido = comentario_existe['comentarios'][
-            conteudo.idioma_requisitado
-        ]
+        match conteudo.idioma_requisitado:
+            case 'en_US':
+                idioma = 'inglês'
+            case 'de':
+                idioma = 'Alemão'
+            case 'pt':
+                idioma = 'Português do Brasil'
+            case _:
+                idioma = 'inglês'
+        comentario_traduzido = comentario_existe['comentarios'][idioma]
         return Message(message=comentario_traduzido)
     else:
         model = genai.GenerativeModel('gemini-1.5-flash')
