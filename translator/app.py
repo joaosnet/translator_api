@@ -1,6 +1,8 @@
+from http import HTTPStatus
+
 import google.generativeai as genai
 import motor.motor_asyncio
-from fastapi import Body, FastAPI, status
+from fastapi import Body, FastAPI
 
 from translator.schemas import (
     Comentario,
@@ -19,10 +21,10 @@ coments_collection = db.get_collection('comentarios')
 
 
 @app.post(
-    '/translator/gemini/',
+    '/translator/',
     response_description='Add new translated comment',
-    response_model=Message,
-    status_code=status.HTTP_201_CREATED,
+    response_model=Comentario,
+    status_code=HTTPStatus.OK.value,
     response_model_by_alias=False,
 )
 async def gemini(conteudo: Comentario = Body(...)):
@@ -30,53 +32,62 @@ async def gemini(conteudo: Comentario = Body(...)):
     Translate the user's comment into three languages
     and store it in the database.
     """
-    model = genai.GenerativeModel('gemini-1.5-flash')
-
     comentario = conteudo.comentario
-    idiomas = ['inglês', 'Alemão', 'Português do Brasil']
-    traducoes = {}
+    # procura o comentário no banco de dados
+    comentario_existe = await coments_collection.find_one({
+        'comentario_original': comentario
+    })
+    if comentario_existe:
+        comentario_traduzido = comentario_existe['comentarios'][
+            conteudo.idioma_requisitado
+        ]
+        return Message(message=comentario_traduzido)
+    else:
+        model = genai.GenerativeModel('gemini-1.5-flash')
 
-    for idioma in idiomas:
-        prompt = f"""Atue como tradutor + corretor com 20 anos de experiência.
-        Seu trabalho é fazer a tradução para o idioma + correção  "{idioma}",
-        caso já esteja no idioma selecionado faça a correção do texto.
-        Não quero outra coisa, apenas a tradução (e se necessário a correção do
-        texto). Para a próxima tarefa, faça a tradução (e se necessário a
-        correção do texto) do seguinte texto: "{comentario}" quero um message
-        simples, direta e clara, sem erros de tradução ou gramaticais, OU SEJA APENAS RESPONDA COM A TRADUÇÃO DO TEXTO
-        Exemplo de Idioma: en
-        Exemplo de Texto enviado: Olá Mundo
-        Exemplo de SUA RESPOSTA: Hello World"""  # noqa: E501
+        idiomas = ['inglês', 'Alemão', 'Português do Brasil']
+        traducoes = {}
 
-        response = model.generate_content(prompt)
-        traducoes[idioma] = response.text
+        for idioma in idiomas:
+            prompt = f"""Atue como tradutor + corretor com 20 anos de experiência.
+            Seu trabalho é fazer a tradução para o idioma + correção  "{idioma}",
+            caso já esteja no idioma selecionado faça a correção do texto.
+            Não quero outra coisa, apenas a tradução (e se necessário a correção do
+            texto). Para a próxima tarefa, faça a tradução (e se necessário a
+            correção do texto) do seguinte texto: "{comentario}" quero um message
+            simples, direta e clara, sem erros de tradução ou gramaticais, OU SEJA APENAS RESPONDA COM A TRADUÇÃO DO TEXTO
+            Exemplo de Idioma: en
+            Exemplo de Texto enviado: Olá Mundo
+            Exemplo de SUA RESPOSTA: Hello World"""  # noqa: E501
 
-    # Criar o documento para inserir no MongoDB
-    comentario_documento = {
-        'usuario': conteudo.usuario,
-        'data': conteudo.data,
-        'comentarios': traducoes,
-    }
+            response = model.generate_content(prompt)
+            traducoes[idioma] = response.text
 
-    # Inserir o documento no MongoDB
-    new_comment = await coments_collection.insert_one(comentario_documento)
-    await coments_collection.find_one({'_id': new_comment.inserted_id})
+        # Criar o documento para inserir no MongoDB
+        comentario_documento = {
+            'comentario_original': comentario,
+            'comentarios': traducoes,
+        }
 
-    match conteudo.idioma_requisitado:
-        case 'en_US':
-            idioma = 'inglês'
-            comentario_traduzido = traducoes[idioma]
-        case 'de':
-            idioma = 'Alemão'
-            comentario_traduzido = traducoes[idioma]
-        case 'pt':
-            idioma = 'Português do Brasil'
-            comentario_traduzido = traducoes[idioma]
-        case _:
-            idioma = 'inglês'
-            comentario_traduzido = traducoes[idioma]
+        # Inserir o documento no MongoDB
+        new_comment = await coments_collection.insert_one(comentario_documento)
+        await coments_collection.find_one({'_id': new_comment.inserted_id})
 
-    return Message(message=comentario_traduzido)
+        match conteudo.idioma_requisitado:
+            case 'en_US':
+                idioma = 'inglês'
+                comentario_traduzido = traducoes[idioma]
+            case 'de':
+                idioma = 'Alemão'
+                comentario_traduzido = traducoes[idioma]
+            case 'pt':
+                idioma = 'Português do Brasil'
+                comentario_traduzido = traducoes[idioma]
+            case _:
+                idioma = 'inglês'
+                comentario_traduzido = traducoes[idioma]
+
+        return Message(message=comentario_traduzido)
 
 
 @app.get(

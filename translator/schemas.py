@@ -1,4 +1,4 @@
-from datetime import datetime
+# from datetime import datetime
 from typing import List
 
 from bson import ObjectId
@@ -34,8 +34,6 @@ class ConfigDict:
 
 class Comentario(BaseModel):
     comentario_id: PyObjectId = Field(default_factory=PyObjectId, alias='_id')
-    usuario: str
-    data: datetime = Field(default_factory=datetime.utcnow)
     comentario: str
     idioma_requisitado: str
 
@@ -44,9 +42,6 @@ class Comentario(BaseModel):
         json_encoders = {ObjectId: str}
         json_schema_extra = {
             'example': {
-                'comentario_id': '507f1f77bcf86cd799439011',
-                'usuario': 'nome_usuario',
-                'data': '2023-10-01T00:00:00Z',
                 'comentario': 'ola',
                 'idioma_requisitado': 'en',
             }
