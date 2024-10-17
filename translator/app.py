@@ -5,6 +5,7 @@ import google.generativeai as genai
 import motor.motor_asyncio
 from dotenv import load_dotenv
 from fastapi import Body, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from translator.schemas import (
     Comentario,
@@ -17,6 +18,23 @@ URL = os.getenv('URL')
 API_KEY = os.getenv('API_KEY')
 
 app = FastAPI()
+
+origins = [
+    'https://lapshub.github.io',
+    'https://lapshub.github.io',
+    'http://localhost',
+    'http://localhost:8000',
+    'http://dmovelapp.com.br:8000/',
+    'https://dmovelapp.com.br',
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
 genai.configure(api_key=API_KEY)
 
